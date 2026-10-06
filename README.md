@@ -2,7 +2,7 @@
 
 A small practice project for learning **RAG (retrieval-augmented generation)** with Python, FastAPI and uv.
 
-Upload a PDF (here, a Korg synth manual), and the service indexes it in Pinecone. You can then ask questions and get answers taken only from the manual, streamed back from Claude.
+Upload a PDF, and the service indexes it in Pinecone. You can then ask questions and get answers taken only from the manual, streamed back from Claude.
 
 > **Scope:** this is not a full-stack app. There's no frontend; everything is done through FastAPI's built-in docs page at `/docs`.
 
@@ -62,11 +62,11 @@ Then open **http://127.0.0.1:8000/docs**.
 
 ## Usage
 
-1. **`POST /upload`**: choose the Korg manual PDF and execute. The response shows how many pages and chunks were indexed.
+1. **`POST /upload`**: choose the PDF and execute. The response shows how many pages and chunks were indexed.
 2. **`POST /ask`**: send a question. `pdf_name` is the filename without `.pdf`:
    ```json
    {
-     "pdf_name": "korg-manual",
+     "pdf_name": "some-manual",
      "question": "How do I save a program?",
      "top_k": 5
    }
@@ -76,10 +76,10 @@ Then open **http://127.0.0.1:8000/docs**.
 Equivalent curl (use `-N` to watch the answer stream in):
 
 ```bash
-curl -F "file=@korg-manual.pdf" http://127.0.0.1:8000/upload
+curl -F "file=@some-manual.pdf" http://127.0.0.1:8000/upload
 curl -N -X POST http://127.0.0.1:8000/ask \
   -H "Content-Type: application/json" \
-  -d '{"pdf_name": "korg-manual", "question": "How do I save a program?"}'
+  -d '{"pdf_name": "some-manual", "question": "How do I save a program?"}'
 ```
 
 ## Notes
