@@ -1,38 +1,31 @@
 # PDF Q&A Service
 
-A small practice project for learning **RAG (retrieval-augmented generation)** with Python, FastAPI and uv.
+A small practice project for learning **RAG (retrieval-augmented generation)** with Python and uv.
 
-Upload a PDF, and the service indexes it in Pinecone. You can then ask questions and get answers taken only from the manual, streamed back from Claude.
-
-> **Scope:** this is not a full-stack app. There's no frontend; everything is done through FastAPI's built-in docs page at `/docs`.
+Running the demo loads three short sample policy documents into Pinecone, then answers questions about them with Claude, using only the documents' content and citing which one each answer came from.
 
 ## How it works
 
 ```
-Upload a PDF
-  → extract the text (pypdf)
-  → split it into ~600-unit chunks with overlap
+Load documents
+  → split into overlapping chunks
   → embed each chunk (Pinecone-hosted llama-text-embed-v2)
-  → store the vectors in Pinecone, tagged with the PDF's filename
+  → store the vectors in Pinecone, tagged with the document's filename
 
 Ask a question
   → embed the question
-  → retrieve the most relevant chunks from that PDF
+  → retrieve the most relevant chunks
   → send those chunks to Claude as context
   → stream the answer back
 ```
 
-For diagrams and design notes, see [ARCHITECTURE.md](ARCHITECTURE.md).
+## Docs
 
-## Tech stack
-
-| | |
+| Doc | What's in it |
 |---|---|
-| API | FastAPI + uvicorn |
-| Package manager | uv (Python 3.13) |
-| PDF parsing | pypdf |
-| Embeddings + vector DB | Pinecone (`llama-text-embed-v2`) |
-| LLM | Anthropic Claude |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | How the pipeline is put together, and the rules it must follow |
+| [docs/decisions/](docs/decisions/) | Why each significant decision was made (ADRs) |
+| [PRD.md](PRD.md) | What's being built next, with acceptance criteria and implementation order |
 
 ## Setup
 
@@ -46,48 +39,51 @@ For diagrams and design notes, see [ARCHITECTURE.md](ARCHITECTURE.md).
    ```bash
    ANTHROPIC_API_KEY=...
    PINECONE_API_KEY=...
-   PINECONE_INDEX_NAME=pdf-qa
+   PINECONE_INDEX_NAME=rag-demo
    ```
-3. In the Pinecone console, create an index with that name. Its **dimension must match the embedding model** (`llama-text-embed-v2` defaults to 1024), and its metric should be cosine.
+3. Check that everything imports (this makes no API calls):
+   ```bash
+   uv run python -c "import main"
+   ```
 
-## Run
+## Run the demo
 
 ```bash
-uv run uvicorn main:app --reload
+uv run python main.py
 ```
 
-Then open **http://127.0.0.1:8000/docs**.
+The first run **creates a Pinecone serverless index** if one with that name doesn't exist (AWS `us-east-1`, cosine, 1024 dimensions). Every run upserts the sample documents and calls Claude.
 
-`uv run` always uses this project's `.venv`, even if another project's virtualenv is still activated in your terminal.
+**Expected answers**, as a quick correctness check:
 
-## Usage
+| Question | Expected answer |
+|---|---|
+| How do I reset my password? | Use the self-service portal at `portal.company.com/reset` |
+| Can I work from home every day? | No: up to 3 days per week, with manager approval |
+| How long do we keep customer data? | At least 7 years |
 
-1. **`POST /upload`**: choose the PDF and execute. The response shows how many pages and chunks were indexed.
-2. **`POST /ask`**: send a question. `pdf_name` is the filename without `.pdf`:
-   ```json
-   {
-     "pdf_name": "some-manual",
-     "question": "How do I save a program?",
-     "top_k": 5
-   }
-   ```
-3. **`GET /pdfs`**: shows the total number of chunks stored in the index.
+## Configuration
 
-Equivalent curl (use `-N` to watch the answer stream in):
+| Setting | Where | Default | Notes |
+|---|---|---|---|
+| `ANTHROPIC_API_KEY` | `.env` | — | Required for answers |
+| `PINECONE_API_KEY` | `.env` | — | Required; the module fails to import without it |
+| `PINECONE_INDEX_NAME` | `.env` | `rag-demo` | Created automatically if missing |
+| Embedding model | code | `llama-text-embed-v2` | Changing it means re-embedding everything |
+| Generation model | code | `claude-sonnet-5-5` | |
+| Relevance cutoff | code | `0.7` | Pass `verbose=True` to `rag_query` to see retrieval scores while tuning |
 
-```bash
-curl -F "file=@some-manual.pdf" http://127.0.0.1:8000/upload
-curl -N -X POST http://127.0.0.1:8000/ask \
-  -H "Content-Type: application/json" \
-  -d '{"pdf_name": "some-manual", "question": "How do I save a program?"}'
-```
+## Troubleshooting
+
+- **Wrong packages or Python version:** always run through `uv run`. It uses this project's `.venv` even if another project's virtualenv is still activated in your terminal.
+- **Upsert fails on dimension mismatch:** an existing index with this name has a different dimension. Use a new `PINECONE_INDEX_NAME`.
+- **`PineconeValueError` at import:** `PINECONE_API_KEY` is missing from `.env`.
 
 ## Notes
 
-- **The manual is not committed.** PDFs are uploaded to Pinecone only; keep them out of git.
-- **Scanned PDFs won't work.** pypdf can only extract real text, so image-only pages return a 422.
-- **Answers are limited to the document.** If no chunk scores above 0.7, the API replies that it couldn't find relevant sections instead of guessing.
+- **No real PDFs are committed.** The demo uses inline sample text; keep any PDFs out of git.
+- **Answers are limited to the documents.** If no chunk scores above the cutoff, the reply says it couldn't find relevant information instead of guessing.
 
 ## Status
 
-Tracking work in github issues 
+Work in progress. Planned work, acceptance criteria and known gaps are tracked in [PRD.md](PRD.md).

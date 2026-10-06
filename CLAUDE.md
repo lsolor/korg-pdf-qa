@@ -6,8 +6,7 @@ A practice project for learning RAG (retrieval-augmented generation): documents 
 - Pinecone for vector storage; Anthropic SDK for generation; FastAPI is declared but no HTTP layer exists yet.
 - The pipeline lives in the root-level module as plain functions (embed → index → chunk/ingest → retrieve → generate), plus a `main()` demo that runs the whole flow.
 - Demo data is the inline sample documents in that demo. The repo contains no real PDFs.
-- Retrieval is scoped by Pinecone namespace plus an optional metadata filter.
-- Design notes are in `ARCHITECTURE.md`; setup and usage are in `README.md`. Both may lag behind the code.
+- Docs: `README.md` (setup), `ARCHITECTURE.md` (map + invariants), `docs/decisions/` (ADRs, never edited), `PRD.md` (planned work).
 
 ## Commands
 ```bash
@@ -30,4 +29,5 @@ uvx ruff format --check --extend-exclude "*.md" .   # format check
 - `uvx ruff check .` and the format check pass.
 - `uv run python -c "import main"` succeeds.
 - Run the demo once if the pipeline changed.
-- Update README and `ARCHITECTURE.md` if setup or data flow changed.
+- Update README or `ARCHITECTURE.md` if setup, data flow or invariants changed.
+- Add an ADR for significant decisions (new dependency, data model, security boundary).

@@ -1,7 +1,7 @@
 # PRD — RAG Demo: Grounded Q&A over Sample Documents, then Permission-Aware Knowledge Base
 
 **Status:** Draft · **Owner:** Luis Solorzano · **Date:** 2026-10-06
-**Related:** [ARCHITECTURE.md](ARCHITECTURE.md) · [Implementation order](#9-implementation-order)
+**Related:** [ARCHITECTURE.md](ARCHITECTURE.md) · [Decision records](docs/decisions/) · [Implementation order](#9-implementation-order)
 
 ---
 
@@ -86,7 +86,7 @@ As **legal staff**, I want restricted documents included in my answers, so that 
 
 Key decisions:
 - **"~600 units" means ~600 tokens**, with ~60 tokens (10%) of overlap. Chunk size is measured with a tokenizer, not by counting words. The existing word-based chunker must change (R4). 600 tokens is well within `llama-text-embed-v2`'s input limit.
-- **Permissions are enforced as a filter inside the Pinecone search**, never by instructing Claude. Claude only ever receives chunks the user is allowed to see.
+- **Permissions are enforced as a filter inside the Pinecone search**, never by instructing Claude. Claude only ever receives chunks the user is allowed to see. See ADRs [0003](docs/decisions/0003-size-chunks-in-tokens.md), [0006](docs/decisions/0006-enforce-permissions-in-retrieval-filter.md) and [0007](docs/decisions/0007-no-user-means-no-access.md).
 
 | ID | Priority | Requirement | Stories | Size |
 |---|---|---|---|---|
@@ -151,6 +151,15 @@ Sizes: **XS** = under an hour · **S** = a short session · **M** = a session pl
 - [ ] An unknown user, **or a question asked without a user**, gets the not-found reply. There's no bypass.
 - [ ] Across the full matrix (3 users × 3 demo questions), no answer or cited source comes from a document the user can't see.
 - [ ] Combined with R5, restricting to a document the user can't access gives the not-found reply.
+
+### Housekeeping (not user-facing)
+
+Small fixes with no user story. Pick them up alongside the nearest requirement.
+
+- [ ] Re-ingesting a document that now produces fewer chunks leaves its old extra chunks behind. Delete a document's chunks by `source_id` before upserting it (pairs with R4).
+- [ ] The module docstring and comments still mention Anthropic embeddings, `pinecone-client` and voyage-3 (pairs with R1).
+- [ ] `uvx ruff check .` reports `Optional` → `X | None` (UP045) and an unused variable in the demo (F841).
+- [ ] `fastapi`, `uvicorn` and `pypdf` are declared but unused. Keep them only if an HTTP layer or PDF loader is planned.
 
 ## 7. Success Metrics
 
