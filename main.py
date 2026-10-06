@@ -22,9 +22,10 @@ This file covers:
 
 import os
 from typing import Optional
+
 from anthropic import Anthropic
-from pinecone import Pinecone, ServerlessSpec
 from dotenv import load_dotenv
+from pinecone import Pinecone, ServerlessSpec
 
 load_dotenv()
 
@@ -34,8 +35,8 @@ load_dotenv()
 
 EMBEDDING_MODEL = "llama-text-embed-v2"
 GENERATION_MODEL = "claude-sonnet-5-5"
-INDEX_NAME = os.getenv("PINECONE_INDEX_NAME", "rag-demo")
-EMBEDDING_DIMENSIONS = 1024  # voyage-3 output dimensions
+INDEX_NAME = os.getenv("PINECONE_INDEX_NAME", "synth-ref")
+EMBEDDING_DIMENSIONS = 1024  # output dimensions
 
 client = Anthropic()
 pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
