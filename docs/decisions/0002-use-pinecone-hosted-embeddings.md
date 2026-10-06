@@ -1,6 +1,6 @@
 # 0002. Use Pinecone-hosted `llama-text-embed-v2` for embeddings
 
-- **Status:** Accepted (implementation pending: PRD requirement R1)
+- **Status:** Accepted (implemented: PRD requirement R1)
 - **Date:** 2026-10-06
 
 ## Context

@@ -3,10 +3,10 @@ RAG Pipeline Reference
 Applied AI Engineers — Module 4
 
 A complete Retrieval Augmented Generation pipeline using
-Anthropic (embeddings + generation) and Pinecone (vector storage).
+Pinecone (embeddings + vector storage) and Anthropic (generation).
 
 Setup:
-    uv add anthropic pinecone-client python-dotenv
+    uv sync
 
     .env file:
         ANTHROPIC_API_KEY=your-key-here
@@ -22,9 +22,10 @@ This file covers:
 
 import os
 from typing import Optional
+
 from anthropic import Anthropic
-from pinecone import Pinecone, ServerlessSpec
 from dotenv import load_dotenv
+from pinecone import Pinecone, ServerlessSpec
 
 load_dotenv()
 
@@ -34,8 +35,9 @@ load_dotenv()
 
 EMBEDDING_MODEL = "llama-text-embed-v2"
 GENERATION_MODEL = "claude-sonnet-5-5"
-INDEX_NAME = os.getenv("PINECONE_INDEX_NAME", "rag-demo")
-EMBEDDING_DIMENSIONS = 1024  # voyage-3 output dimensions
+INDEX_NAME = os.getenv("PINECONE_INDEX_NAME", "synth-ref")
+EMBEDDING_DIMENSIONS = 1024  # output dimensions
+EMBED_BATCH_SIZE = 96  # max inputs per request for llama-text-embed-v2
 
 client = Anthropic()
 pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
@@ -48,25 +50,37 @@ pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
 
 def embed_text(text: str) -> list[float]:
     """
-    Generate an embedding vector for a single text string.
+    Generate an embedding vector for a question.
 
-    Uses Anthropic's Voyage embedding model. In production, batch
-    your embedding calls to reduce API requests and cost.
+    llama-text-embed-v2 is asymmetric: questions are embedded as "query"
+    and stored chunks as "passage", so the two line up at search time.
     """
-    response = client.embeddings.create(model=EMBEDDING_MODEL, input=text)
-    return response.embeddings[0].values
+    response = pc.inference.embed(
+        model=EMBEDDING_MODEL,
+        inputs=[text],
+        parameters={"input_type": "query", "dimension": EMBEDDING_DIMENSIONS},
+    )
+    return response[0].values
 
 
 def embed_batch(texts: list[str]) -> list[list[float]]:
     """
-    Generate embeddings for multiple texts in a single API call.
+    Generate embeddings for document chunks, one vector per text, in order.
 
     Always prefer this over calling embed_text in a loop.
     Batching reduces API calls and is significantly more cost-efficient
     at scale — enterprise ingestion pipelines can involve thousands of chunks.
+    Requests are split to respect the model's per-request input limit.
     """
-    response = client.embeddings.create(model=EMBEDDING_MODEL, input=texts)
-    return [e.values for e in response.embeddings]
+    vectors = []
+    for i in range(0, len(texts), EMBED_BATCH_SIZE):
+        response = pc.inference.embed(
+            model=EMBEDDING_MODEL,
+            inputs=texts[i : i + EMBED_BATCH_SIZE],
+            parameters={"input_type": "passage", "dimension": EMBEDDING_DIMENSIONS},
+        )
+        vectors.extend(embedding.values for embedding in response)
+    return vectors
 
 
 # ---------------------------------------------------------------------------

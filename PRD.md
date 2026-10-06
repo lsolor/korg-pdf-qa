@@ -103,11 +103,11 @@ Sizes: **XS** = under an hour · **S** = a short session · **M** = a session pl
 ### Acceptance criteria
 
 **R1 — Embeddings**
-- [ ] Given the sample documents, when the demo runs, ingestion completes and upserts 3 vectors with no `AttributeError`.
-- [ ] Each stored vector has 1024 dimensions, matching the index.
-- [ ] Chunks are embedded with `passage` and questions with `query`.
-- [ ] Ingesting 250 chunks makes multiple embedding requests and stores all 250 vectors.
-- [ ] Re-running the demo doesn't increase the vector count.
+- [x] Given the sample documents, ingestion completes and upserts 3 vectors with no `AttributeError` (verified with a fake index; a full demo run also needs R2).
+- [x] Each stored vector has 1024 dimensions, matching the index (confirmed against the live API).
+- [x] Chunks are embedded with `passage` and questions with `query`.
+- [x] Ingesting 250 chunks makes multiple embedding requests and stores all 250 vectors.
+- [x] Re-running ingestion doesn't increase the vector count.
 
 **R2 — Streamed answers**
 - [ ] When the demo asks its 3 questions, each answer streams to the terminal as it's generated.
@@ -122,6 +122,8 @@ Sizes: **XS** = under an hour · **S** = a short session · **M** = a session pl
 - [ ] 3 off-topic questions ("What's the capital of France?", "How do I bake bread?", "Who won the World Cup?") get the not-found reply, with no Claude call made.
 - [ ] All 3 demo questions still retrieve their correct chunk with the chosen cutoff.
 - [ ] The cutoff is defined in one place, and the README explains how to tune it.
+
+> **Note from R1:** with the live model, a correct question/chunk pair scored a cosine similarity of **0.565**, and an unrelated pair **0.018**. The current 0.7 cutoff would discard the correct chunk, so expect a value well below 0.7.
 
 **R4 — Token-based chunking**
 - [ ] No chunk is longer than 600 tokens, measured with the chosen tokenizer.
@@ -157,7 +159,7 @@ Sizes: **XS** = under an hour · **S** = a short session · **M** = a session pl
 Small fixes with no user story. Pick them up alongside the nearest requirement.
 
 - [ ] Re-ingesting a document that now produces fewer chunks leaves its old extra chunks behind. Delete a document's chunks by `source_id` before upserting it (pairs with R4).
-- [ ] The module docstring and comments still mention Anthropic embeddings, `pinecone-client` and voyage-3 (pairs with R1).
+- [x] The module docstring and comments still mention Anthropic embeddings, `pinecone-client` and voyage-3 (pairs with R1).
 - [ ] `uvx ruff check .` reports `Optional` → `X | None` (UP045) and an unused variable in the demo (F841).
 - [ ] `fastapi`, `uvicorn` and `pypdf` are declared but unused. Keep them only if an HTTP layer or PDF loader is planned.
 
