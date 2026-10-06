@@ -37,6 +37,7 @@ EMBEDDING_MODEL = "llama-text-embed-v2"
 GENERATION_MODEL = "claude-sonnet-5-5"
 INDEX_NAME = os.getenv("PINECONE_INDEX_NAME", "synth-ref")
 EMBEDDING_DIMENSIONS = 1024  # output dimensions
+EMBED_BATCH_SIZE = 96  # max inputs per request for llama-text-embed-v2
 
 client = Anthropic()
 pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
@@ -47,27 +48,41 @@ pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
 # ---------------------------------------------------------------------------
 
 
+def _embed(texts: list[str], input_type: str) -> list[list[float]]:
+    """
+    Embed texts with Pinecone's hosted model, one vector per text, in order.
+
+    llama-text-embed-v2 is asymmetric: stored chunks are embedded as
+    "passage" and questions as "query", so the two line up at search time.
+    """
+    response = pc.inference.embed(
+        model=EMBEDDING_MODEL,
+        inputs=texts,
+        parameters={"input_type": input_type, "dimension": EMBEDDING_DIMENSIONS},
+    )
+    return [embedding.values for embedding in response]
+
+
 def embed_text(text: str) -> list[float]:
     """
-    Generate an embedding vector for a single text string.
-
-    Uses Anthropic's Voyage embedding model. In production, batch
-    your embedding calls to reduce API requests and cost.
+    Generate an embedding vector for a question.
     """
-    response = client.embeddings.create(model=EMBEDDING_MODEL, input=text)
-    return response.embeddings[0].values
+    return _embed([text], input_type="query")[0]
 
 
 def embed_batch(texts: list[str]) -> list[list[float]]:
     """
-    Generate embeddings for multiple texts in a single API call.
+    Generate embeddings for document chunks.
 
     Always prefer this over calling embed_text in a loop.
     Batching reduces API calls and is significantly more cost-efficient
     at scale — enterprise ingestion pipelines can involve thousands of chunks.
+    Requests are split to respect the model's per-request input limit.
     """
-    response = client.embeddings.create(model=EMBEDDING_MODEL, input=texts)
-    return [e.values for e in response.embeddings]
+    vectors = []
+    for i in range(0, len(texts), EMBED_BATCH_SIZE):
+        vectors.extend(_embed(texts[i : i + EMBED_BATCH_SIZE], input_type="passage"))
+    return vectors
 
 
 # ---------------------------------------------------------------------------
