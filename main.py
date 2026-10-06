@@ -40,6 +40,9 @@ EMBEDDING_DIMENSIONS = 1024  # output dimensions
 EMBED_BATCH_SIZE = 96  # max inputs per request for llama-text-embed-v2
 MAX_ANSWER_TOKENS = 16000  # shared by Claude's thinking and the answer
 CUT_OFF_NOTICE = "\n\n[Answer cut off: reached the token limit.]"
+# Chunks scoring at or below this are ignored. Measured with llama-text-embed-v2:
+# correct matches scored 0.30-0.55, unrelated pairs at most 0.13.
+RELEVANCE_CUTOFF = 0.2
 
 client = Anthropic()
 pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
@@ -267,7 +270,7 @@ def retrieve(
             "metadata": match.metadata,
         }
         for match in results.matches
-        if match.score > 0.7  # Minimum similarity threshold
+        if match.score > RELEVANCE_CUTOFF
     ]
 
 
