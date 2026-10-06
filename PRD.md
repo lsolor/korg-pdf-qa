@@ -91,7 +91,7 @@ Key decisions:
 | ID | Priority | Requirement | Stories | Size | Status |
 |---|---|---|---|---|---|
 | R1 | **P0** | Embed chunks and questions with Pinecone-hosted `llama-text-embed-v2`, using `passage` for chunks and `query` for questions | US-1, US-4 | S | ✅ Done |
-| R2 | **P0** | Stream answers from `claude-sonnet-5-5` with valid request parameters | US-1 | XS | 🔄 In progress |
+| R2 | **P0** | Stream answers from `claude-sonnet-5-5` with valid request parameters | US-1 | XS | ✅ Done |
 | R3 | **P0** | Cite source filenames; give the not-found reply when retrieval finds nothing relevant; tune the relevance cutoff for the embedding model | US-2, US-3 | S | To do |
 | R4 | **P1** | ~600-token chunks with ~60-token overlap, measured with a tokenizer; no duplicated or lost text; invalid settings rejected | US-4 | M | To do |
 | R5 | **P1** | Optionally restrict a question to one document by filename | US-5 | XS | To do |
@@ -109,12 +109,12 @@ Sizes: **XS** = under an hour · **S** = a short session · **M** = a session pl
 - [x] Ingesting 250 chunks makes multiple embedding requests and stores all 250 vectors.
 - [x] Re-running ingestion doesn't increase the vector count.
 
-**R2 — Streamed answers** · 🔄 In progress
-- [ ] When the demo asks its 3 questions, each answer streams to the terminal as it's generated.
-- [ ] The answers match the expected answers: the reset portal for passwords; "no, up to 3 days per week" for remote work; "at least 7 years" for retention.
-- [ ] `rag_query(..., stream=False)` returns the answer text as a non-empty `str`.
-- [ ] No answer is cut off mid-sentence (`stop_reason` is checked).
-- [ ] An invalid API key produces a clear error message, not a deep stack trace.
+**R2 — Streamed answers** · ✅ Done (2026-10-06)
+- [x] Each answer streams to the terminal as it's generated (tests + live check against Claude).
+- [x] The answers match the expected answers: the reset portal for passwords; "no, up to 3 days per week" for remote work; "at least 7 years" for retention (live check, with each policy passed as context; the full demo also needs R3's cutoff fix).
+- [x] The non-streaming path returns the answer text as a non-empty `str`, even when a thinking block comes first.
+- [x] `max_tokens` raised to 16000; a `max_tokens` stop is flagged with a visible "cut off" notice in both paths.
+- [x] An invalid API key raises an error that names `ANTHROPIC_API_KEY` (the traceback is still shown).
 
 **R3 — Sources and not-found**
 - [ ] Each demo answer names the correct source file (`it_security_policy.pdf`, `hr_policy.pdf`, `data_governance.pdf`).
@@ -199,7 +199,7 @@ flowchart LR
 | Step | Requirement | User value | Depends on | Complexity | Why here |
 |---|---|---|---|---|---|
 | 1 | **R1** Embeddings ✅ | None directly; it's the blocker | — | S | Everything else needs vectors. Today ingestion crashes. |
-| 2 | **R2** Streamed answers | **Highest**: the demo starts answering | R1 (to test) | XS | Smallest change with the biggest payoff. The code fix doesn't depend on R1, so do both in one session. |
+| 2 | **R2** Streamed answers ✅ | **Highest**: the demo starts answering | R1 (to test) | XS | Smallest change with the biggest payoff. The code fix doesn't depend on R1, so do both in one session. |
 | 3 | **R3** Sources + not-found | High: answers become trustworthy | R1, R2 | S | The cutoff can only be tuned with real embedding scores. Tuning now isn't wasted: the samples stay 1 chunk each, even after R4. |
 | 4 | **R5** Ask one document | Medium | R1 | XS | `retrieve` already accepts a metadata filter, so this is mostly passing a filename through. It also sets up the filter pattern R7 extends. |
 | 5 | **R6 + R7** Access control | High: the headline extension | R3, R5 | S + M | Build R6 and R7 back to back and ship them together: R6 alone changes nothing a user can see. Q2 is resolved. |
