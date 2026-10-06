@@ -331,7 +331,8 @@ Question: {question}"""
             system=system_prompt or default_system,
             messages=[{"role": "user", "content": user_message}],
         )
-        return response.content[0].text
+        # Sonnet 5.5 thinks by default, so the answer may not be the first block
+        return next(block.text for block in response.content if block.type == "text")
 
 
 # ---------------------------------------------------------------------------
