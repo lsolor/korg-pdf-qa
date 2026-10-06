@@ -79,7 +79,7 @@ The first run **creates a Pinecone serverless index** if one with that name does
 | `PINECONE_INDEX_NAME` | `.env` | `synth-ref` | Created automatically if missing |
 | Embedding model | code | `llama-text-embed-v2` | Changing it means re-embedding everything |
 | Generation model | code | `claude-sonnet-5-5` | |
-| Relevance cutoff | code | `0.7` | Pass `verbose=True` to `rag_query` to see retrieval scores while tuning |
+| Relevance cutoff | code | `0.2` | Chunks scoring at or below it are ignored. Pass `verbose=True` to `rag_query` to see retrieval scores while tuning |
 
 ## Troubleshooting
 
