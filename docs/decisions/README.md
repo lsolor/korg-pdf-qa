@@ -7,7 +7,7 @@ ADRs are **never edited** after they're accepted, apart from their status line. 
 | ADR | Decision | Status |
 |---|---|---|
 | [0001](0001-use-pinecone-serverless-as-vector-store.md) | Use Pinecone serverless as the vector store | Accepted |
-| [0002](0002-use-pinecone-hosted-embeddings.md) | Use Pinecone-hosted `llama-text-embed-v2` for embeddings | Accepted, pending R1 |
+| [0002](0002-use-pinecone-hosted-embeddings.md) | Use Pinecone-hosted `llama-text-embed-v2` for embeddings | Accepted, implemented |
 | [0003](0003-size-chunks-in-tokens.md) | Size chunks in tokens (~600, with ~60 overlap) | Accepted, pending R4 |
 | [0004](0004-gate-generation-on-retrieval-relevance.md) | Skip generation when no chunk is relevant enough | Accepted |
 | [0005](0005-structure-pipeline-as-plain-functions.md) | Structure the pipeline as plain functions with a demo entry point | Accepted |
