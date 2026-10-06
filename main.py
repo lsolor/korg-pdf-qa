@@ -39,6 +39,7 @@ INDEX_NAME = os.getenv("PINECONE_INDEX_NAME", "synth-ref")
 EMBEDDING_DIMENSIONS = 1024  # output dimensions
 EMBED_BATCH_SIZE = 96  # max inputs per request for llama-text-embed-v2
 MAX_ANSWER_TOKENS = 16000  # shared by Claude's thinking and the answer
+CUT_OFF_NOTICE = "\n\n[Answer cut off: reached the token limit.]"
 
 client = Anthropic()
 pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
@@ -322,6 +323,9 @@ Question: {question}"""
             for text in stream_obj.text_stream:
                 print(text, end="", flush=True)
                 full_response.append(text)
+            if stream_obj.get_final_message().stop_reason == "max_tokens":
+                print(CUT_OFF_NOTICE, end="")
+                full_response.append(CUT_OFF_NOTICE)
         print()
         return "".join(full_response)
     else:
@@ -332,7 +336,10 @@ Question: {question}"""
             messages=[{"role": "user", "content": user_message}],
         )
         # Sonnet 5.5 thinks by default, so the answer may not be the first block
-        return next(block.text for block in response.content if block.type == "text")
+        answer = next(block.text for block in response.content if block.type == "text")
+        if response.stop_reason == "max_tokens":
+            answer += CUT_OFF_NOTICE
+        return answer
 
 
 # ---------------------------------------------------------------------------

@@ -42,6 +42,17 @@ def test_an_answer_cut_off_by_the_token_limit_is_flagged(fake_claude):
     assert "cut off" in answer.lower()
 
 
+def test_a_streamed_answer_cut_off_by_the_token_limit_is_flagged(fake_claude, capsys):
+    fake_claude.respond(
+        "Customer data must be ", "retained for", stop_reason="max_tokens"
+    )
+
+    answer = main.generate_with_context(QUESTION, CHUNKS, stream=True)
+
+    assert "cut off" in answer.lower()
+    assert "cut off" in capsys.readouterr().out.lower()
+
+
 def test_a_rejected_api_key_raises_an_error_that_names_the_setting(fake_claude):
     fake_claude.fail_with(anthropic.AuthenticationError, 401)
 
