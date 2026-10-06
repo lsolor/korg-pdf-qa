@@ -48,31 +48,24 @@ pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
 # ---------------------------------------------------------------------------
 
 
-def _embed(texts: list[str], input_type: str) -> list[list[float]]:
-    """
-    Embed texts with Pinecone's hosted model, one vector per text, in order.
-
-    llama-text-embed-v2 is asymmetric: stored chunks are embedded as
-    "passage" and questions as "query", so the two line up at search time.
-    """
-    response = pc.inference.embed(
-        model=EMBEDDING_MODEL,
-        inputs=texts,
-        parameters={"input_type": input_type, "dimension": EMBEDDING_DIMENSIONS},
-    )
-    return [embedding.values for embedding in response]
-
-
 def embed_text(text: str) -> list[float]:
     """
     Generate an embedding vector for a question.
+
+    llama-text-embed-v2 is asymmetric: questions are embedded as "query"
+    and stored chunks as "passage", so the two line up at search time.
     """
-    return _embed([text], input_type="query")[0]
+    response = pc.inference.embed(
+        model=EMBEDDING_MODEL,
+        inputs=[text],
+        parameters={"input_type": "query", "dimension": EMBEDDING_DIMENSIONS},
+    )
+    return response[0].values
 
 
 def embed_batch(texts: list[str]) -> list[list[float]]:
     """
-    Generate embeddings for document chunks.
+    Generate embeddings for document chunks, one vector per text, in order.
 
     Always prefer this over calling embed_text in a loop.
     Batching reduces API calls and is significantly more cost-efficient
@@ -81,7 +74,12 @@ def embed_batch(texts: list[str]) -> list[list[float]]:
     """
     vectors = []
     for i in range(0, len(texts), EMBED_BATCH_SIZE):
-        vectors.extend(_embed(texts[i : i + EMBED_BATCH_SIZE], input_type="passage"))
+        response = pc.inference.embed(
+            model=EMBEDDING_MODEL,
+            inputs=texts[i : i + EMBED_BATCH_SIZE],
+            parameters={"input_type": "passage", "dimension": EMBEDDING_DIMENSIONS},
+        )
+        vectors.extend(embedding.values for embedding in response)
     return vectors
 
 
