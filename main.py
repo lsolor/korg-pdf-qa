@@ -23,7 +23,7 @@ This file covers:
 import os
 from typing import Optional
 
-from anthropic import Anthropic
+from anthropic import Anthropic, AuthenticationError
 from dotenv import load_dotenv
 from pinecone import Pinecone, ServerlessSpec
 
@@ -312,34 +312,41 @@ When referencing information, cite the source document."""
 
 Question: {question}"""
 
-    if stream:
-        full_response = []
-        with client.messages.stream(
-            model=GENERATION_MODEL,
-            max_tokens=MAX_ANSWER_TOKENS,
-            system=system_prompt or default_system,
-            messages=[{"role": "user", "content": user_message}],
-        ) as stream_obj:
-            for text in stream_obj.text_stream:
-                print(text, end="", flush=True)
-                full_response.append(text)
-            if stream_obj.get_final_message().stop_reason == "max_tokens":
-                print(CUT_OFF_NOTICE, end="")
-                full_response.append(CUT_OFF_NOTICE)
-        print()
-        return "".join(full_response)
-    else:
-        response = client.messages.create(
-            model=GENERATION_MODEL,
-            max_tokens=MAX_ANSWER_TOKENS,
-            system=system_prompt or default_system,
-            messages=[{"role": "user", "content": user_message}],
-        )
-        # Sonnet 5.5 thinks by default, so the answer may not be the first block
-        answer = next(block.text for block in response.content if block.type == "text")
-        if response.stop_reason == "max_tokens":
-            answer += CUT_OFF_NOTICE
-        return answer
+    try:
+        if stream:
+            full_response = []
+            with client.messages.stream(
+                model=GENERATION_MODEL,
+                max_tokens=MAX_ANSWER_TOKENS,
+                system=system_prompt or default_system,
+                messages=[{"role": "user", "content": user_message}],
+            ) as stream_obj:
+                for text in stream_obj.text_stream:
+                    print(text, end="", flush=True)
+                    full_response.append(text)
+                if stream_obj.get_final_message().stop_reason == "max_tokens":
+                    print(CUT_OFF_NOTICE, end="")
+                    full_response.append(CUT_OFF_NOTICE)
+            print()
+            return "".join(full_response)
+        else:
+            response = client.messages.create(
+                model=GENERATION_MODEL,
+                max_tokens=MAX_ANSWER_TOKENS,
+                system=system_prompt or default_system,
+                messages=[{"role": "user", "content": user_message}],
+            )
+            # Sonnet 5.5 thinks by default, so the answer may not be the first block
+            answer = next(
+                block.text for block in response.content if block.type == "text"
+            )
+            if response.stop_reason == "max_tokens":
+                answer += CUT_OFF_NOTICE
+            return answer
+    except AuthenticationError as error:
+        raise RuntimeError(
+            "Claude rejected the API key. Check ANTHROPIC_API_KEY in .env."
+        ) from error
 
 
 # ---------------------------------------------------------------------------
