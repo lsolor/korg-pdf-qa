@@ -3,10 +3,10 @@ RAG Pipeline Reference
 Applied AI Engineers — Module 4
 
 A complete Retrieval Augmented Generation pipeline using
-Anthropic (embeddings + generation) and Pinecone (vector storage).
+Pinecone (embeddings + vector storage) and Anthropic (generation).
 
 Setup:
-    uv add anthropic pinecone-client python-dotenv
+    uv sync
 
     .env file:
         ANTHROPIC_API_KEY=your-key-here
