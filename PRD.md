@@ -111,7 +111,7 @@ Sizes: **XS** = under an hour · **S** = a short session · **M** = a session pl
 
 **R2 — Streamed answers** · ✅ Done (2026-10-06)
 - [x] Each answer streams to the terminal as it's generated (tests + live check against Claude).
-- [x] The answers match the expected answers: the reset portal for passwords; "no, up to 3 days per week" for remote work; "at least 7 years" for retention (live check, with each policy passed as context; the full demo also needs R3's cutoff fix).
+- [x] The answers match the expected answers: the reset portal for passwords; "no, up to 3 days per week" for remote work; "at least 7 years" for retention (confirmed by a full demo run on 2026-10-06 against a fresh `rag-demo` index).
 - [x] The non-streaming path returns the answer text as a non-empty `str`, even when a thinking block comes first.
 - [x] `max_tokens` raised to 16000; a `max_tokens` stop is flagged with a visible "cut off" notice in both paths.
 - [x] An invalid API key raises an error that names `ANTHROPIC_API_KEY` (the traceback is still shown).
@@ -120,10 +120,10 @@ Sizes: **XS** = under an hour · **S** = a short session · **M** = a session pl
 - [ ] Each demo answer names the correct source file (`it_security_policy.pdf`, `hr_policy.pdf`, `data_governance.pdf`).
 - [ ] An answer never cites a file whose chunks weren't retrieved.
 - [ ] 3 off-topic questions ("What's the capital of France?", "How do I bake bread?", "Who won the World Cup?") get the not-found reply, with no Claude call made.
-- [ ] All 3 demo questions still retrieve their correct chunk with the chosen cutoff.
+- [x] All 3 demo questions still retrieve their correct chunk with the chosen cutoff (0.2; done early to unblock the demo).
 - [ ] The cutoff is defined in one place, and the README explains how to tune it.
 
-> **Note from R1:** with the live model, a correct question/chunk pair scored a cosine similarity of **0.565**, and an unrelated pair **0.018**. The current 0.7 cutoff would discard the correct chunk, so expect a value well below 0.7.
+> **Cutoff measured (2026-10-06):** with `llama-text-embed-v2`, the demo's correct question/document pairs scored **0.297–0.547**, the best wrong document **0.134**, and off-topic questions at most **0.032**. The cutoff is now **0.2**, in that gap. Remaining R3 work: citations, the off-topic checks, and the README tuning note.
 
 **R4 — Token-based chunking**
 - [ ] No chunk is longer than 600 tokens, measured with the chosen tokenizer.
@@ -182,6 +182,7 @@ Small fixes with no user story. Pick them up alongside the nearest requirement.
 | Q2 | ~~Which sample documents are restricted?~~ **Resolved (2026-10-06):** `data_governance.pdf` → `legal` only; `it_security_policy.pdf` and `hr_policy.pdf` → `all-staff`. | Product | Resolved |
 | Q3 | Should a user be able to see **which** documents they have access to? (Not in scope; a natural next requirement.) | Product | No |
 | Q4 | When the HTTP layer returns, where does user identity come from? | Engineering | No (out of scope) |
+| Q5 | The `synth-ref` index uses **integrated embedding** (Pinecone embeds text itself), but the code embeds client-side and stores raw vectors (ADR 0002). Keep client-side with a standard index, or switch to integrated? The demo currently runs on a standard `rag-demo` index. | Engineering | No |
 
 ## 9. Implementation Order
 
