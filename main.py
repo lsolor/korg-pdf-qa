@@ -38,6 +38,7 @@ GENERATION_MODEL = "claude-sonnet-5-5"
 INDEX_NAME = os.getenv("PINECONE_INDEX_NAME", "synth-ref")
 EMBEDDING_DIMENSIONS = 1024  # output dimensions
 EMBED_BATCH_SIZE = 96  # max inputs per request for llama-text-embed-v2
+MAX_ANSWER_TOKENS = 16000  # shared by Claude's thinking and the answer
 
 client = Anthropic()
 pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
@@ -314,8 +315,7 @@ Question: {question}"""
         full_response = []
         with client.messages.stream(
             model=GENERATION_MODEL,
-            max_tokens=1024,
-            temperature=0.1,
+            max_tokens=MAX_ANSWER_TOKENS,
             system=system_prompt or default_system,
             messages=[{"role": "user", "content": user_message}],
         ) as stream_obj:
@@ -327,8 +327,7 @@ Question: {question}"""
     else:
         response = client.messages.create(
             model=GENERATION_MODEL,
-            max_tokens=1024,
-            temperature=0.1,
+            max_tokens=MAX_ANSWER_TOKENS,
             system=system_prompt or default_system,
             messages=[{"role": "user", "content": user_message}],
         )
