@@ -92,7 +92,7 @@ Key decisions:
 |---|---|---|---|---|---|
 | R1 | **P0** | Embed chunks and questions with Pinecone-hosted `llama-text-embed-v2`, using `passage` for chunks and `query` for questions | US-1, US-4 | S | ✅ Done |
 | R2 | **P0** | Stream answers from `claude-sonnet-5-5` with valid request parameters | US-1 | XS | ✅ Done |
-| R3 | **P0** | Cite source filenames; give the not-found reply when retrieval finds nothing relevant; tune the relevance cutoff for the embedding model | US-2, US-3 | S | To do |
+| R3 | **P0** | Cite source filenames; give the not-found reply when retrieval finds nothing relevant; tune the relevance cutoff for the embedding model | US-2, US-3 | S | 🟡 Partly done (cutoff tuned to 0.2) |
 | R4 | **P1** | ~600-token chunks with ~60-token overlap, measured with a tokenizer; no duplicated or lost text; invalid settings rejected | US-4 | M | To do |
 | R5 | **P1** | Optionally restrict a question to one document by filename | US-5 | XS | To do |
 | R6 | **P2** | Tag each document's chunks with allowed groups at ingestion; deny by default | US-6 | S | To do |
@@ -116,7 +116,7 @@ Sizes: **XS** = under an hour · **S** = a short session · **M** = a session pl
 - [x] `max_tokens` raised to 16000; a `max_tokens` stop is flagged with a visible "cut off" notice in both paths.
 - [x] An invalid API key raises an error that names `ANTHROPIC_API_KEY` (the traceback is still shown).
 
-**R3 — Sources and not-found**
+**R3 — Sources and not-found** · 🟡 Partly done (cutoff tuned early to unblock the demo)
 - [ ] Each demo answer names the correct source file (`it_security_policy.pdf`, `hr_policy.pdf`, `data_governance.pdf`).
 - [ ] An answer never cites a file whose chunks weren't retrieved.
 - [ ] 3 off-topic questions ("What's the capital of France?", "How do I bake bread?", "Who won the World Cup?") get the not-found reply, with no Claude call made.
